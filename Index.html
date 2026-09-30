@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Retouche Image</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,sans-serif;background:#0a0e1a;color:#e8ecf8;min-height:100vh;padding:1rem 1rem 4rem;font-size:15px;line-height:1.5;max-width:900px;margin:0 auto}
+h1{text-align:center;font-size:1.5rem;margin-bottom:0.3rem;background:linear-gradient(135deg,#4a9eff,#7c5cff,#d94aff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;font-size:0.82rem;color:#8892b0;margin-bottom:1rem}
+.panel{background:#131829;border:1px solid #2a3350;border-radius:12px;padding:1rem;margin-bottom:1rem}
+.panel.ok{border-color:#2d8a4e}
+.lbl{font-size:0.7rem;color:#8892b0;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:0.6rem}
+textarea,input{width:100%;padding:0.85rem;border-radius:10px;border:1px solid #2a3350;background:#1a2036;color:#e8ecf8;font-family:inherit;font-size:0.9rem}
+textarea{min-height:100px;resize:vertical;line-height:1.5}
+textarea:focus,input:focus{outline:none;border-color:#4a9eff}
+button.primary{width:100%;padding:1rem;border-radius:12px;border:none;background:linear-gradient(135deg,#4a9eff,#7c5cff);color:#fff;font-size:1rem;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:1rem}
+button.primary:active{transform:scale(0.98)}
+button.primary:disabled{opacity:0.35;cursor:not-allowed}
+.upload{border:2px dashed #2a3350;border-radius:12px;padding:2rem 1rem;text-align:center;cursor:pointer;margin-bottom:1rem;background:#131829}
+.upload:active{border-color:#4a9eff;background:#1a2036}
+.upload input{display:none}
+.up-icon{font-size:2.4rem;color:#4a9eff;line-height:1;margin-bottom:0.5rem}
+.up-text{font-size:0.95rem;color:#e8ecf8;font-weight:500}
+.up-hint{font-size:0.75rem;color:#8892b0;margin-top:0.2rem}
+.preview{position:relative;border-radius:12px;overflow:hidden;border:1px solid #2a3350;background:#000;margin-bottom:1rem}
+.preview img{width:100%;display:block}
+.preview .rm{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.result{margin-top:1rem;padding:1rem;background:#131829;border:1px solid #2d8a4e;border-radius:12px}
+.result img{width:100%;border-radius:8px;display:block;margin-bottom:0.5rem}
+.result a{color:#4a9eff;text-decoration:underline;font-size:0.8rem}
+.msg{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#2d8a4e;color:#fff;padding:0.9rem 1.4rem;border-radius:12px;font-size:0.85rem;z-index:1000;display:none;max-width:90vw;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+.msg.error{background:#c0392b}
+.msg.visible{display:block}
+.status{font-size:0.75rem;padding:0.6rem 0.9rem;border-radius:8px;background:#1a2036;color:#8892b0;display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem}
+.status.active{background:rgba(74,158,255,0.15);color:#4a9eff}
+.status.done{background:rgba(45,138,78,0.15);color:#6ee7a3}
+.status.error{background:rgba(192,57,43,0.15);color:#e07070}
+.hint{font-size:0.72rem;color:#8892b0;margin-top:0.6rem;line-height:1.45}
+.spinner{width:14px;height:14px;border:2px solid rgba(74,158,255,0.3);border-top-color:#4a9eff;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<h1>Retouche Image</h1>
+<p class="sub">Transformez vos photos avec l'IA</p>
+
+<div class="panel" id="keyPanel">
+<div class="lbl">🔑 Clé API Agnes</div>
+<input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" spellcheck="false">
+<button class="primary" id="btnSaveKey" style="padding:0.7rem;margin-top:0.5rem">Enregistrer la clé</button>
+<div class="status" id="keyStatus">Aucune clé enregistrée</div>
+</div>
+
+<div class="upload" id="uploadZone">
+<input type="file" id="fileInput" accept="image/*">
+<div class="up-icon">＋</div>
+<div class="up-text">Choisir une photo</div>
+<div class="up-hint">Elle sera transformée par l'IA</div>
+</div>
+
+<div class="preview hidden" id="preview" style="display:none">
+<img id="previewImg" src="" alt="">
+<button class="rm" id="btnRemove">✕</button>
+</div>
+
+<div class="panel">
+<div class="lbl">✍️ Décris la transformation</div>
+<textarea id="prompt" placeholder="Exemples :&#10;• Transforme en nuit cyberpunk avec néons roses et bleus&#10;• Ajoute une ambiance golden hour, lumière dorée chaude&#10;• Change le fond en forêt tropicale luxuriante&#10;• Rends cette image en style Studio Ghibli"></textarea>
+<div class="hint">💡 Sois précis : décris ce que tu veux changer, et ce que tu veux garder.</div>
+</div>
+
+<button class="primary" id="btnGenerate">✨ Transformer l'image</button>
+<div id="result"></div>
+
+<div class="msg" id="msg">Message</div>
+
+<script>
+function $(id){return document.getElementById(id);}
+var KEY_STORAGE='agnes_retouche_key';
+var currentImage=null;
+
+function showMsg(txt,isError){
+var m=$('msg');
+m.textContent=txt;
+m.className='msg '+(isError?'error':'')+' visible';
+setTimeout(function(){m.className='msg';},3500);
+}
+
+function getKey(){
+try{return (localStorage.getItem(KEY_STORAGE)||'').trim();}catch(e){return '';}
+}
+
+function refreshKeyStatus(){
+var k=getKey();
+var s=$('keyStatus'),p=$('keyPanel'),i=$('apiKey');
+if(k&&k.startsWith('sk-')){
+p.classList.add('ok');
+s.className='status done';
+s.textContent='✓ Clé active · '+k.slice(0,8)+'…'+k.slice(-4);
+i.value=k;
+}else{
+p.classList.remove('ok');
+s.className='status';
+s.textContent='Aucune clé enregistrée';
+i.value='';
+}
+}
+
+$('btnSaveKey').onclick=function(){
+var k=$('apiKey').value.trim();
+if(!k||!k.startsWith('sk-')){showMsg('Clé invalide (doit commencer par sk-)',true);return;}
+localStorage.setItem(KEY_STORAGE,k);
+refreshKeyStatus();
+showMsg('Clé enregistrée ✓');
+};
+
+$('uploadZone').onclick=function(){$('fileInput').click();};
+
+$('fileInput').onchange=function(e){
+var f=e.target.files[0];
+if(!f)return;
+var r=new FileReader();
+r.onload=function(ev){
+currentImage=ev.target.result;
+$('previewImg').src=currentImage;
+$('preview').style.display='block';
+showMsg('Image chargée ✓');
+};
+r.readAsDataURL(f);
+};
+
+$('btnRemove').onclick=function(){
+currentImage=null;
+$('preview').style.display='none';
+$('previewImg').src='';
+$('fileInput').value='';
+};
+
+async function generateImage(){
+if(!currentImage){showMsg('Choisis d\'abord une photo',true);return;}
+var prompt=$('prompt').value.trim();
+if(!prompt){showMsg('Décris la transformation',true);return;}
+var key=getKey();
+if(!key){showMsg('Enregistre d\'abord ta clé',true);return;}
+
+var btn=$('btnGenerate');
+btn.disabled=true;
+btn.textContent='Transformation en cours…';
+$('result').innerHTML='<div class="status active"><div class="spinner"></div>L\'IA transforme ton image… (peut prendre 30-60 secondes)</div>';
+
+try{
+var res=await fetch('https://apihub.agnes-ai.com/v1/images/generations',{
+method:'POST',
+headers:{
+'Authorization':'Bearer '+key,
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+model:'agnes-image-2.5-flash',
+prompt:prompt,
+image:[currentImage],
+n:1,
+size:'1024x1792'
+})
+});
+
+if(!res.ok){
+var errTxt=await res.text();
+throw new Error('HTTP '+res.status+' — '+errTxt.slice(0,200));
+}
+
+var data=await res.json();
+var url='';
+if(data.data&&data.data[0]){
+url=data.data[0].url||data.data[0].b64_json||'';
+if(url&&!url.startsWith('http')&&!url.startsWith('data:')){
+url='data:image/png;base64,'+url;
+}
+}
+if(!url)throw new Error('Pas d\'image reçue');
+
+$('result').innerHTML='<div class="result"><img src="'+url+'" alt=""><a href="'+url+'" download="retouche.png" target="_blank">⬇️ Télécharger l\'image</a></div>';
+showMsg('Image transformée ✓');
+
+}catch(e){
+$('result').innerHTML='<div class="status error">Erreur : '+e.message+'</div>';
+showMsg('Erreur : '+e.message,true);
+}finally{
+btn.disabled=false;
+btn.textContent='✨ Transformer l\'image';
+}
+}
+
+$('btnGenerate').onclick=generateImage;
+
+refreshKeyStatus();
+</script>
+</body>
+</html>
